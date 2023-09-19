@@ -1,0 +1,68 @@
+import com.image.shipment.rules.model.ShipmentTypeRequest;
+global com.image.shipment.rules.model.ShipmentTypeResponse shipmentTypeResponse;
+
+dialect "mvel"
+
+rule "Distance Based Rate Rule 1"
+when
+     $shipmentTypeRequest: ShipmentTypeRequest($shipmentType: shipmentType, $distance: shipmentType.distance)
+     eval($distance >= 0 && $distance <= 100)
+    
+then
+    shipmentTypeResponse.setEngineRate(10);
+end
+
+rule "Distance Based Rate Rule 2"
+when
+     $shipmentTypeRequest: ShipmentTypeRequest($shipmentType: shipmentType, $distance: shipmentType.distance)
+     eval($distance > 100 && $distance <= 200)
+then
+    shipmentTypeResponse.setEngineRate(20);
+end
+
+rule "Zone 1 Rule"
+when
+      $shipmentTypeRequest: ShipmentTypeRequest($shipmentType: shipmentType, $zipCode: shipmentType.zipCode)
+      eval($zipCode == "07099" || $zipCode == "07044" || $zipCode == "07612")
+then
+    shipmentTypeResponse.setEngineRate(10);
+end
+
+rule "Zone 2 Rule"
+when
+      $shipmentTypeRequest: ShipmentTypeRequest($shipmentType: shipmentType, $zipCode: shipmentType.zipCode)
+      eval($zipCode == "10007" || $zipCode == "10023" || $zipCode == "10048")
+then
+    shipmentTypeResponse.setEngineRate(20);
+end
+
+
+rule "Service Rate Rule for weight"
+when
+     $shipmentTypeRequest: ShipmentTypeRequest(
+        $shipmentType: shipmentType, 
+        $zipCode: shipmentType.zipCode,
+        $Shipment: shipment, 
+        $weight: shipment.weight, 
+        $duration: shipment.duration,
+        $serviceType: shipment.serviceType
+    )
+    eval($weight >= 0 && $weight <= 200 && $serviceType=="weight" && ($zipCode == "07099" || $zipCode == "07044" || $zipCode == "07612") && $duration==30)
+then
+    shipmentTypeResponse.setEngineRate(50);
+end
+
+rule "Service Rate Rule for end-to-end"
+when
+     $shipmentTypeRequest: ShipmentTypeRequest(
+        $shipmentType: shipmentType, 
+        $zipCode: shipmentType.zipCode,
+        $Shipment: shipment, 
+        $weight: shipment.weight, 
+        $duration: shipment.duration,
+        $serviceType: shipment.serviceType
+    )
+    eval($weight >= 0 && $weight <= 100 && $serviceType=="end-to-end" && ($zipCode == "10007" || $zipCode == "10023" || $zipCode == "10048") && $duration==30)
+then
+    shipmentTypeResponse.setEngineRate(100);
+end
